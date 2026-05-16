@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Gestalt Match — FLUPA 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,300&display=swap');
+
+  :root {
+    --bg: #0f0e11;
+    --surface: #1a1820;
+    --border: #2e2b35;
+    --accent: #e84d8a;
+    --accent2: #7c5cbf;
+    --text: #f0edf5;
+    --muted: #6b6478;
+    --success: #3ecf8e;
+    --error: #ff5e5e;
+    --warn: #f5a623;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    padding: 20px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0;
+    background: var(--bg);
+    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-title {
+    font-family: 'Fraunces', serif;
+    font-size: 18px; font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .header-title span { color: var(--accent); }
+  .progress-wrap { display: flex; gap: 5px; }
+  .progress-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .progress-dot.done { background: var(--success); }
+  .progress-dot.active { background: var(--accent); }
+
+  /* INTRO SCREEN */
+  #intro {
+    padding: 32px 20px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .intro-tag {
+    display: inline-block;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--accent); border: 1px solid var(--accent);
+    padding: 4px 10px; border-radius: 20px;
+    width: fit-content;
+  }
+  .intro-h {
+    font-family: 'Fraunces', serif;
+    font-size: 32px; line-height: 1.15; font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .intro-h em { color: var(--accent); font-style: italic; }
+  .intro-desc {
+    font-size: 13px; line-height: 1.7;
+    color: #b0a8be;
+  }
+  .intro-rule {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 12px; line-height: 1.6;
+    color: #b0a8be;
+  }
+  .intro-rule strong { color: var(--text); }
+  .btn-start {
+    background: var(--accent);
+    color: white;
+    border: none; border-radius: 12px;
+    padding: 16px 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 14px; font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn-start:active { transform: scale(0.97); opacity: 0.85; }
+
+  /* NAME SCREEN */
+  #namescreen {
+    display: none; padding: 32px 20px;
+    flex-direction: column; gap: 20px;
+  }
+  .name-h {
+    font-family: 'Fraunces', serif;
+    font-size: 28px; line-height: 1.2; font-weight: 700;
+  }
+  .name-h em { color: var(--accent); font-style: italic; }
+  .name-input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .name-input:focus { border-color: var(--accent); }
+  .name-input::placeholder { color: var(--muted); }
+  .name-error { font-size: 11px; color: var(--error); display: none; }
+  .name-error.show { display: block; }
+
+  /* GAME SCREEN */
+  #game { display: none; padding: 16px 20px 32px; }
+
+  .round-label {
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 6px;
+  }
+  .round-q {
+    font-family: 'Fraunces', serif;
+    font-size: 20px; font-weight: 300; line-height: 1.3;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+  .round-q em { font-style: italic; color: #d4c8f0; }
+
+  /* SVG VIZ CARD */
+  .viz-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 180px;
+    transition: border-color 0.3s;
+  }
+  .viz-card.correct { border-color: var(--success); }
+  .viz-card.wrong { border-color: var(--error); animation: shake 0.3s; }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  /* CHOICES */
+  .choices-label {
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 12px;
+  }
+  .choices {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .choice-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 10px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.1s;
+    text-align: left;
+    line-height: 1.4;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .choice-name {
+    font-size: 12px; font-weight: 500; color: var(--text);
+  }
+  .choice-def {
+    font-size: 10px; color: var(--muted); line-height: 1.4;
+    font-weight: 400;
+  }
+  .choice-btn.correct .choice-name,
+  .choice-btn.correct .choice-def { color: var(--success); }
+  .choice-btn.wrong .choice-name,
+  .choice-btn.wrong .choice-def { color: var(--error); }
+  .choice-btn.reveal-correct .choice-name { color: var(--success); }
+  .choice-btn.reveal-correct .choice-def { color: var(--success); opacity: 0.7; }
+  .choice-btn:active { transform: scale(0.96); }
+  .choice-btn:hover { border-color: var(--accent2); }
+  .choice-btn.selected { border-color: var(--accent2); background: rgba(124,92,191,0.15); }
+  .choice-btn.correct { border-color: var(--success); background: rgba(62,207,142,0.12); }
+  .choice-btn.wrong { border-color: var(--error); background: rgba(255,94,94,0.10); }
+  .choice-btn.reveal-correct { border-color: var(--success); background: rgba(62,207,142,0.08); }
+
+  /* FEEDBACK */
+  .feedback {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 12px; line-height: 1.7;
+    color: #b0a8be;
+    display: none;
+    margin-bottom: 16px;
+  }
+  .feedback strong { color: var(--text); }
+  .feedback.show { display: block; }
+  .feedback-icon { font-size: 20px; margin-bottom: 6px; display: block; }
+
+  .btn-next {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 24px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    width: 100%;
+    transition: border-color 0.2s, transform 0.1s;
+    display: none;
+  }
+  .btn-next.show { display: block; }
+  .btn-next:active { transform: scale(0.97); }
+  .btn-next:hover { border-color: var(--accent); }
+
+  /* RESULTS SCREEN */
+  #results {
+    display: none; padding: 32px 20px;
+    flex-direction: column; gap: 20px;
+  }
+  .score-big {
+    font-family: 'Fraunces', serif;
+    font-size: 80px; font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -2px;
+    line-height: 1;
+  }
+  .score-label {
+    font-size: 12px; color: var(--muted);
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+  .results-h {
+    font-family: 'Fraunces', serif;
+    font-size: 26px; line-height: 1.3;
+  }
+  .results-recap { display: flex; flex-direction: column; gap: 8px; }
+  .recap-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 11px; line-height: 1.5;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .recap-item .ri { flex-shrink: 0; font-size: 16px; }
+  .recap-item strong { display: block; color: var(--text); font-size: 12px; margin-bottom: 2px; }
+  .recap-item span { color: var(--muted); }
+  .btn-restart {
+    background: var(--accent);
+    color: white;
+    border: none; border-radius: 12px;
+    padding: 16px 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 14px; font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-top: 8px;
+  }
+  .btn-restart:active { opacity: 0.8; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">Gestalt <span>Match</span></div>
+  <div class="progress-wrap" id="progressDots"></div>
+</div>
+
+<!-- INTRO -->
+<div id="intro">
+  <div class="intro-tag">FLUPA UX Days 2026</div>
+  <div class="intro-h">Quel principe <em>Gestalt</em> se cache ici ?</div>
+  <div class="intro-desc">
+    6 visualisations de données. 6 principes Gestalt. Ton cerveau les applique déjà sans le savoir — tu vas juste leur donner un nom.
+  </div>
+  <div class="intro-rule">
+    <strong>Comment jouer :</strong><br>
+    Observe la dataviz → choisis le principe qui explique pourquoi elle fonctionne → lis le pourquoi.
+  </div>
+  <button class="btn-start" onclick="startGame()">Commencer →</button>
+</div>
+
+<!-- NAME SCREEN -->
+<div id="namescreen">
+  <div class="intro-tag">Avant de commencer</div>
+  <div class="name-h">C'est quoi <em>ton prénom</em> ?</div>
+  <p style="font-size:12px;color:#b0a8be;line-height:1.6">Pour que Myriam puisse voir tes résultats en direct pendant le débrief.</p>
+  <input class="name-input" id="nameInput" type="text" placeholder="ex. Sophie" maxlength="30" autocomplete="off" />
+  <div class="name-error" id="nameError">Entre au moins 2 caractères pour continuer.</div>
+  <button class="btn-start" onclick="submitName()">C'est parti →</button>
+</div>
+
+<!-- GAME -->
+<div id="game">
+  <div class="round-label" id="roundLabel">Question 1 / 6</div>
+  <div class="round-q" id="roundQ"></div>
+  <div class="viz-card" id="vizCard"></div>
+  <div class="choices-label">Quel principe illustre cette visualisation ?</div>
+  <div class="choices" id="choicesGrid"></div>
+  <div class="feedback" id="feedback"></div>
+  <button class="btn-next" id="btnNext" onclick="nextRound()">Question suivante →</button>
+</div>
+
+<!-- RESULTS -->
+<div id="results">
+  <div>
+    <div class="score-big" id="scoreNum">0</div>
+    <div class="score-label">/ 6 correct</div>
+  </div>
+  <div class="results-h" id="resultsH"></div>
+  <div class="results-recap" id="resultsRecap"></div>
+  <button class="btn-restart" onclick="restartGame()">Rejouer →</button>
+</div>
+
+<script>
+const principles = [
+  { name: 'Proximité',   def: 'Les éléments proches semblent groupés' },
+  { name: 'Similitude',  def: 'Même forme ou couleur = même groupe' },
+  { name: 'Clôture',     def: 'Le cerveau complète les formes incomplètes' },
+  { name: 'Continuité',  def: 'L\'œil suit le chemin le plus fluide' },
+  { name: 'Connexion',   def: 'Un trait entre deux éléments crée un lien' },
+  { name: 'Enclosure',   def: 'Encadrer des éléments les regroupe' },
+];
+
+const rounds = [
+  {
+    principle: 'Proximité',
+    question: 'Regardez ce graphique à barres. Pourquoi regroupe-t-on mentalement certaines barres ensemble ?',
+    feedback: '✓ <strong>Proximité :</strong> Les barres proches sont perçues comme un groupe avant même de lire les légendes. En data viz, l\'espacement est une donnée — réduire l\'espace entre les barres d\'un même groupe dit "ces données vont ensemble".',
+    svg: `<svg viewBox="0 0 240 150" width="240" height="150" xmlns="http://www.w3.org/2000/svg">
+      <!-- Groupe 1 (barres proches) -->
+      <rect x="18" y="50" width="22" height="80" rx="3" fill="#e84d8a" opacity="0.9"/>
+      <rect x="44" y="30" width="22" height="100" rx="3" fill="#e84d8a" opacity="0.7"/>
+      <rect x="70" y="65" width="22" height="65" rx="3" fill="#e84d8a" opacity="0.5"/>
+      <!-- GAP large -->
+      <!-- Groupe 2 (barres proches) -->
+      <rect x="120" y="40" width="22" height="90" rx="3" fill="#7c5cbf" opacity="0.9"/>
+      <rect x="146" y="55" width="22" height="75" rx="3" fill="#7c5cbf" opacity="0.7"/>
+      <rect x="172" y="25" width="22" height="105" rx="3" fill="#7c5cbf" opacity="0.5"/>
+      <!-- Baseline -->
+      <line x1="10" y1="130" x2="230" y2="130" stroke="#2e2b35" stroke-width="1.5"/>
+      <!-- Label gap -->
+      <text x="95" y="148" fill="#6b6478" font-size="9" text-anchor="middle" font-family="monospace">←gap→</text>
+    </svg>`
+  },
+  {
+    principle: 'Similitude',
+    question: 'Dans ce scatter plot, comment distinguez-vous instantanément les deux groupes sans lire la légende ?',
+    feedback: '✓ <strong>Similitude :</strong> Même forme ou même couleur = même catégorie dans l\'esprit du lecteur. Ici la couleur fait le travail de catégorisation avant la légende. En pratique : utilisez la couleur pour un seul niveau de distinction à la fois.',
+    svg: `<svg viewBox="0 0 240 150" width="240" height="150" xmlns="http://www.w3.org/2000/svg">
+      <!-- Cercles groupe A (rose) -->
+      <circle cx="45" cy="45" r="8" fill="#e84d8a" opacity="0.85"/>
+      <circle cx="70" cy="70" r="8" fill="#e84d8a" opacity="0.85"/>
+      <circle cx="55" cy="90" r="8" fill="#e84d8a" opacity="0.85"/>
+      <circle cx="88" cy="55" r="8" fill="#e84d8a" opacity="0.85"/>
+      <circle cx="38" cy="110" r="8" fill="#e84d8a" opacity="0.85"/>
+      <!-- Carrés groupe B (violet) -->
+      <rect x="140" y="40" width="16" height="16" rx="2" fill="#7c5cbf" opacity="0.85"/>
+      <rect x="165" y="65" width="16" height="16" rx="2" fill="#7c5cbf" opacity="0.85"/>
+      <rect x="150" y="90" width="16" height="16" rx="2" fill="#7c5cbf" opacity="0.85"/>
+      <rect x="185" y="48" width="16" height="16" rx="2" fill="#7c5cbf" opacity="0.85"/>
+      <rect x="175" y="105" width="16" height="16" rx="2" fill="#7c5cbf" opacity="0.85"/>
+      <!-- Axes -->
+      <line x1="15" y1="135" x2="225" y2="135" stroke="#2e2b35" stroke-width="1"/>
+      <line x1="15" y1="15" x2="15" y2="135" stroke="#2e2b35" stroke-width="1"/>
+    </svg>`
+  },
+  {
+    principle: 'Clôture',
+    question: 'Ce graphique à secteurs est incomplet — des arcs sont ouverts. Pourtant, vous voyez des "parts". Pourquoi ?',
+    feedback: '✓ <strong>Clôture :</strong> Le cerveau complète automatiquement les formes incomplètes. En dataviz : les donut charts fonctionnent même avec un trou dedans parce que la clôture fait le travail. Attention : trop d\'ouvertures cognitives épuisent le lecteur.',
+    svg: `<svg viewBox="0 0 240 150" width="240" height="150" xmlns="http://www.w3.org/2000/svg">
+      <!-- Donut chart with gaps — brain closes the shapes -->
+      <g transform="translate(120,75)">
+        <!-- Arc 1 ~35% -->
+        <path d="M0,-55 A55,55 0 0,1 47.5,27.5" fill="none" stroke="#e84d8a" stroke-width="22" opacity="0.9"/>
+        <!-- Gap -->
+        <!-- Arc 2 ~30% -->
+        <path d="M52,20 A55,55 0 0,1 -30,45" fill="none" stroke="#7c5cbf" stroke-width="22" opacity="0.9"/>
+        <!-- Gap -->
+        <!-- Arc 3 ~25% -->
+        <path d="M-38,38 A55,55 0 0,1 -50,-18" fill="none" stroke="#3ecf8e" stroke-width="22" opacity="0.9"/>
+        <!-- Gap -->
+        <!-- Inner circle suggestion -->
+        <circle cx="0" cy="0" r="22" fill="none" stroke="#2e2b35" stroke-width="1" stroke-dasharray="3,4"/>
+      </g>
+      <!-- Labels with lines suggesting completion -->
+      <text x="175" y="30" fill="#e84d8a" font-size="10" font-family="monospace">35%</text>
+      <text x="175" y="95" fill="#7c5cbf" font-size="10" font-family="monospace">30%</text>
+      <text x="30" y="100" fill="#3ecf8e" font-size="10" font-family="monospace">25%</text>
+    </svg>`
+  },
+  {
+    principle: 'Continuité',
+    question: 'Vos yeux suivent ce graphique linéaire de gauche à droite sans effort. Quel principe est à l\'œuvre ?',
+    feedback: '✓ <strong>Continuité :</strong> L\'œil cherche le chemin le plus fluide. Une courbe continue capte l\'attention plus longtemps qu\'une liste de points. Les graphiques en ligne sont si efficaces justement parce qu\'ils exploitent ce principe — le regard suit naturellement la tendance.',
+    svg: `<svg viewBox="0 0 240 150" width="240" height="150" xmlns="http://www.w3.org/2000/svg">
+      <!-- Grid lines subtle -->
+      <line x1="20" y1="40" x2="225" y2="40" stroke="#1a1820" stroke-width="1"/>
+      <line x1="20" y1="75" x2="225" y2="75" stroke="#1a1820" stroke-width="1"/>
+      <line x1="20" y1="110" x2="225" y2="110" stroke="#1a1820" stroke-width="1"/>
+      <!-- Line 1 — continuous upward -->
+      <polyline points="20,105 55,88 90,70 125,58 160,42 195,28 225,20"
+        fill="none" stroke="#e84d8a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <!-- Dots on line 1 -->
+      <circle cx="20" cy="105" r="4" fill="#e84d8a"/>
+      <circle cx="90" cy="70" r="4" fill="#e84d8a"/>
+      <circle cx="160" cy="42" r="4" fill="#e84d8a"/>
+      <circle cx="225" cy="20" r="4" fill="#e84d8a"/>
+      <!-- Line 2 — secondary -->
+      <polyline points="20,120 55,115 90,108 125,100 160,88 195,80 225,72"
+        fill="none" stroke="#7c5cbf" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="5,3"/>
+      <!-- Arrow suggesting direction -->
+      <path d="M215,16 L228,20 L218,26" fill="none" stroke="#e84d8a" stroke-width="1.5" stroke-linecap="round"/>
+      <!-- Axes -->
+      <line x1="20" y1="15" x2="20" y2="130" stroke="#2e2b35" stroke-width="1"/>
+      <line x1="20" y1="130" x2="228" y2="130" stroke="#2e2b35" stroke-width="1"/>
+    </svg>`
+  },
+  {
+    principle: 'Connexion',
+    question: 'Ces deux métriques semblent liées. Qu\'est-ce qui crée ce lien visuellement ?',
+    feedback: '✓ <strong>Connexion :</strong> Un trait entre deux éléments dit "relation" plus fort que n\'importe quelle légende. En UX research : relier un verbatim utilisateur à une métrique quantitative avec une simple ligne crée une association mémorable.',
+    svg: `<svg viewBox="0 0 240 150" width="240" height="150" xmlns="http://www.w3.org/2000/svg">
+      <!-- Left metric card -->
+      <rect x="10" y="40" width="80" height="70" rx="8" fill="#1a1820" stroke="#e84d8a" stroke-width="1.5"/>
+      <text x="50" y="70" text-anchor="middle" fill="#e84d8a" font-size="22" font-family="monospace" font-weight="bold">72%</text>
+      <text x="50" y="88" text-anchor="middle" fill="#6b6478" font-size="9" font-family="monospace">Task</text>
+      <text x="50" y="99" text-anchor="middle" fill="#6b6478" font-size="9" font-family="monospace">completion</text>
+      <!-- Right metric card -->
+      <rect x="150" y="40" width="80" height="70" rx="8" fill="#1a1820" stroke="#7c5cbf" stroke-width="1.5"/>
+      <text x="190" y="70" text-anchor="middle" fill="#7c5cbf" font-size="22" font-family="monospace" font-weight="bold">4.2</text>
+      <text x="190" y="88" text-anchor="middle" fill="#6b6478" font-size="9" font-family="monospace">SUS</text>
+      <text x="190" y="99" text-anchor="middle" fill="#6b6478" font-size="9" font-family="monospace">score</text>
+      <!-- Connection line with arrow -->
+      <line x1="92" y1="75" x2="148" y2="75" stroke="#f0edf5" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <circle cx="120" cy="75" r="14" fill="#0f0e11" stroke="#2e2b35" stroke-width="1"/>
+      <text x="120" y="79" text-anchor="middle" fill="#f5a623" font-size="10" font-family="monospace">r=.81</text>
+    </svg>`
+  },
+  {
+    principle: 'Enclosure',
+    question: 'Même sans titre de section, vous percevez deux zones distinctes dans ce dashboard. Pourquoi ?',
+    feedback: '✓ <strong>Enclosure :</strong> Un cadre ou un fond différent regroupe sans avoir besoin d\'un titre. En dashboard design : un fond légèrement différent autour de métriques liées crée un groupement perçu instantanément — avant que l\'utilisateur ne lise quoi que ce soit.',
+    svg: `<svg viewBox="0 0 240 150" width="240" height="150" xmlns="http://www.w3.org/2000/svg">
+      <!-- Zone 1 background (enclosure) -->
+      <rect x="8" y="10" width="108" height="130" rx="10" fill="#1a1820" stroke="#e84d8a" stroke-width="1" opacity="0.8"/>
+      <!-- Zone 2 background (enclosure) -->
+      <rect x="124" y="10" width="108" height="130" rx="10" fill="#1a1820" stroke="#7c5cbf" stroke-width="1" opacity="0.8"/>
+      <!-- Zone 1 content -->
+      <text x="62" y="35" text-anchor="middle" fill="#6b6478" font-size="8" font-family="monospace" letter-spacing="1">ACQUISITION</text>
+      <text x="62" y="60" text-anchor="middle" fill="#e84d8a" font-size="24" font-family="monospace" font-weight="bold">1.2k</text>
+      <text x="62" y="76" text-anchor="middle" fill="#6b6478" font-size="8" font-family="monospace">sessions</text>
+      <rect x="28" y="88" width="68" height="4" rx="2" fill="#2e2b35"/>
+      <rect x="28" y="88" width="44" height="4" rx="2" fill="#e84d8a" opacity="0.7"/>
+      <text x="62" y="108" text-anchor="middle" fill="#6b6478" font-size="8" font-family="monospace">+18% vs N-1</text>
+      <!-- Zone 2 content -->
+      <text x="178" y="35" text-anchor="middle" fill="#6b6478" font-size="8" font-family="monospace" letter-spacing="1">RÉTENTION</text>
+      <text x="178" y="60" text-anchor="middle" fill="#7c5cbf" font-size="24" font-family="monospace" font-weight="bold">43%</text>
+      <text x="178" y="76" text-anchor="middle" fill="#6b6478" font-size="8" font-family="monospace">retention D30</text>
+      <rect x="144" y="88" width="68" height="4" rx="2" fill="#2e2b35"/>
+      <rect x="144" y="88" width="29" height="4" rx="2" fill="#7c5cbf" opacity="0.7"/>
+      <text x="178" y="108" text-anchor="middle" fill="#6b6478" font-size="8" font-family="monospace">−5% vs N-1</text>
+    </svg>`
+  }
+];
+
+let current = 0;
+let score = 0;
+let answered = [];
+let userAnswers = [];
+let participantName = '';
+
+// ⚙️ REMPLACE cette URL par celle de ton Apps Script déployé
+const SHEET_URL = 'COLLE_TON_URL_ICI';
+
+function startGame() {
+  document.getElementById('intro').style.display = 'none';
+  document.getElementById('namescreen').style.display = 'flex';
+  // Focus input on mobile
+  setTimeout(() => document.getElementById('nameInput').focus(), 100);
+}
+
+function submitName() {
+  const val = document.getElementById('nameInput').value.trim();
+  if (val.length < 2) {
+    document.getElementById('nameError').classList.add('show');
+    return;
+  }
+  participantName = val;
+  document.getElementById('namescreen').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+  buildDots();
+  showRound(0);
+}
+
+// Allow Enter key on name input
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('nameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitName();
+  });
+});
+
+function buildDots() {
+  const wrap = document.getElementById('progressDots');
+  wrap.innerHTML = '';
+  rounds.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'progress-dot' + (i === 0 ? ' active' : '');
+    d.id = 'dot-' + i;
+    wrap.appendChild(d);
+  });
+}
+
+function updateDots(idx, correct) {
+  const d = document.getElementById('dot-' + idx);
+  if (d) { d.classList.remove('active'); d.classList.add('done'); }
+  if (idx + 1 < rounds.length) {
+    const next = document.getElementById('dot-' + (idx + 1));
+    if (next) next.classList.add('active');
+  }
+}
+
+function showRound(idx) {
+  const r = rounds[idx];
+  document.getElementById('roundLabel').textContent = `Question ${idx + 1} / ${rounds.length}`;
+  document.getElementById('roundQ').innerHTML = r.question;
+  document.getElementById('vizCard').innerHTML = r.svg;
+  document.getElementById('vizCard').className = 'viz-card';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('feedback').innerHTML = '';
+  document.getElementById('btnNext').className = 'btn-next';
+
+  // Shuffle choices
+  const shuffled = [...principles].sort(() => Math.random() - 0.5);
+  const grid = document.getElementById('choicesGrid');
+  grid.innerHTML = '';
+  shuffled.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="choice-name">${p.name}</span><span class="choice-def">${p.def}</span>`;
+    btn.onclick = () => handleChoice(p.name, btn, idx);
+    grid.appendChild(btn);
+  });
+}
+
+function handleChoice(chosen, btn, idx) {
+  if (answered.includes(idx)) return;
+  answered.push(idx);
+  userAnswers.push({ idx, chosen, correct: rounds[idx].principle });
+
+  const r = rounds[idx];
+  const isCorrect = chosen === r.principle;
+  if (isCorrect) score++;
+
+  // Update viz card
+  document.getElementById('vizCard').classList.add(isCorrect ? 'correct' : 'wrong');
+
+  // Color all buttons
+  document.querySelectorAll('.choice-btn').forEach(b => {
+    if (b.querySelector('.choice-name').textContent === r.principle) b.classList.add('reveal-correct');
+  });
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+
+  // Feedback
+  const fb = document.getElementById('feedback');
+  fb.innerHTML = `<span class="feedback-icon">${isCorrect ? '✓' : '✗'}</span>${r.feedback}`;
+  fb.className = 'feedback show';
+
+  // Next button
+  const btnNext = document.getElementById('btnNext');
+  btnNext.className = 'btn-next show';
+  btnNext.textContent = idx < rounds.length - 1 ? 'Question suivante →' : 'Voir les résultats →';
+
+  updateDots(idx, isCorrect);
+}
+
+function nextRound() {
+  current++;
+  if (current >= rounds.length) {
+    showResults();
+  } else {
+    showRound(current);
+  }
+}
+
+function showResults() {
+  document.getElementById('game').style.display = 'none';
+  const el = document.getElementById('results');
+  el.style.display = 'flex';
+
+  document.getElementById('scoreNum').textContent = score;
+
+  const messages = [
+    [0,2, 'Bon, on a du boulot. 😅 La bonne nouvelle : ton cerveau applique déjà ces principes — faut juste les rendre conscients.'],
+    [3,4, 'Pas mal. Tu vois les patterns, tu as juste besoin de nommer ce que tu fais déjà.'],
+    [5,5, 'Solide. Un principe t\'a piégé — mais les 5 autres sont dans ta boîte à outils.'],
+    [6,6, 'Parfait. Tu peux fermer l\'atelier et aller boire un café. ☕']
+  ];
+  const msg = messages.find(([min, max]) => score >= min && score <= max);
+  document.getElementById('resultsH').textContent = msg ? msg[2] : '';
+
+  const recap = document.getElementById('resultsRecap');
+  recap.innerHTML = '';
+  userAnswers.forEach(a => {
+    const r = rounds[a.idx];
+    const ok = a.chosen === r.principle;
+    const item = document.createElement('div');
+    item.className = 'recap-item';
+    item.innerHTML = `
+      <span class="ri">${ok ? '✅' : '❌'}</span>
+      <div>
+        <strong>${r.principle}</strong>
+        <span>${ok ? 'Correct' : `Tu as répondu : ${a.chosen}`}</span>
+      </div>`;
+    recap.appendChild(item);
+  });
+
+  sendToSheet();
+}
+
+function sendToSheet() {
+  if (!SHEET_URL || SHEET_URL === 'COLLE_TON_URL_ICI') return;
+  const payload = {
+    prenom: participantName,
+    score: score,
+    total: rounds.length,
+    timestamp: new Date().toISOString(),
+    reponses: userAnswers.map(a => ({
+      principe: rounds[a.idx].principle,
+      choix: a.chosen,
+      correct: a.chosen === rounds[a.idx].principle
+    }))
+  };
+  fetch(SHEET_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).catch(() => {}); // silencieux — ne pas bloquer l'UI si ça échoue
+}
+
+function restartGame() {
+  current = 0; score = 0; answered = []; userAnswers = [];
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+  buildDots();
+  showRound(0);
+}
+</script>
+</body>
+</html>
